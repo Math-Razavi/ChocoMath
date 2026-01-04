@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ایستگاه ۳: بخش بارگیری</title>
+    <style>
+        :root {
+            --box-color: #D7CCC8; /* رنگ کارتن */
+            --box-border: #8D6E63;
+            --choco-color: #5D4037; /* رنگ شکلات */
+            --void-color: rgba(255, 82, 82, 0.2); /* رنگ فضای خالی */
+            --accent: #FF6F00;
+            --bg-warehouse: #CFD8DC;
+            --success: #43A047;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-warehouse);
+            color: #37474F;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #263238;
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1100px;
+            width: 100%;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            border-top: 10px solid var(--box-border);
+            box-sizing: border-box; /* مهم برای محاسبه دقیق عرض */
+        }
+
+        /* پنل سمت راست (کنترل‌ها) */
+        .controls-panel {
+            flex: 1;
+            min-width: 280px; /* کمی کاهش برای موبایل‌های کوچک */
+            padding: 20px;
+            background: #FFF3E0;
+            border-radius: 8px;
+            border: 1px dashed var(--accent);
+        }
+
+        /* پنل سمت چپ (نمایش) */
+        .visual-panel {
+            flex: 2;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        canvas {
+            background: radial-gradient(circle, #ffffff 0%, #f0f0f0 100%);
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            border: 1px solid #ccc;
+            /* تغییرات جدید برای ریسپانسیو شدن */
+            width: 100%; /* عرض را با والد پر کند */
+            height: auto; /* ارتفاع اتوماتیک */
+            max-width: 500px; /* اما از 500 بزرگتر نشود */
+        }
+
+        /* المان‌های ورودی */
+        .input-group { margin-bottom: 25px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4E342E; }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .value-badge {
+            float: left;
+            background: var(--box-border);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* جعبه اطلاعات وضعیت */
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            text-align: center;
+            width: 90%; /* در موبایل کمی عریض‌تر شود */
+            max-width: 400px;
+        }
+
+        .big-number {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--choco-color);
+            margin: 10px 0;
+            line-height: 1;
+        }
+
+        .efficiency-bar {
+            height: 10px;
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .efficiency-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.5s, background 0.3s;
+        }
+
+        /* هدف ماموریت */
+        .mission-box {
+            background: #263238;
+            color: var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .mission-box::before {
+            content: "⚠️";
+            position: absolute;
+            top: -10px; right: -10px;
+            font-size: 5em;
+            opacity: 0.1;
+        }
+
+        .status-msg { margin-top: 15px; font-weight: bold; font-size: 1.1em; color: #333; min-height: 30px;}
+        .win-anim { animation: bounce 0.6s; color: var(--success); }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* مودال */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            padding: 20px; /* فاصله در موبایل */
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 10px;
+            max-width: 550px; width: 100%; text-align: center;
+            border-bottom: 6px solid var(--accent);
+        }
+        .start-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 12px 30px; font-size: 1.2em; border-radius: 50px;
+            cursor: pointer; margin-top: 20px; transition: 0.2s;
+        }
+        .start-btn:hover { transform: scale(1.05); background: #E65100; }
+        .hidden { display: none; }
+
+        /* تغییرات مخصوص موبایل برای تناسب بهتر */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px; /* کاهش پدینگ بدنه */
+            }
+            .container {
+                padding: 15px; /* کاهش پدینگ کانتینر اصلی */
+                flex-direction: column-reverse; /* کنترل‌ها پایین، تصویر بالا */
+            }
+            .visual-panel {
+                margin-bottom: 20px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="introModal" class="modal">
+        <div class="modal-content">
+            <h2>🚚 ایستگاه ۳: بارگیری (Container)</h2>
+            <p style="font-size: 1.1em; line-height: 1.6;">
+                تبریک! شکلات‌ها آماده و بسته‌بندی شده‌اند.
+                <br>
+                حالا باید تعداد زیادی از آن‌ها (مثلاً ۶۴ یا ۱۰۰ تا) را داخل یک <strong>کارتن بزرگ مادر</strong> بچینیم و برای فروشگاه‌ها بفرستیم.
+            </p>
+            <p style="background:#FFF3E0; padding:10px; border-radius:5px;">
+                <strong>چالش:</strong> ابعاد کارتن بزرگ را طوری تنظیم کن که دقیقاً تعداد سفارش داده شده در آن جا شود و هیچ <strong>فضای خالی (هوا)</strong> باقی نماند.
+            </p>
+            <button class="start-btn" onclick="startGame()">شروع عملیات</button>
+        </div>
+    </div>
+
+    <h1>📦 ایستگاه ۳: بهینه‌سازی بارگیری</h1>
+
+    <div class="container" id="mainContainer">
+        
+        <div class="controls-panel">
+            <div class="mission-box">
+                <h3 style="margin:0; color: white; font-size:0.9em;">سفارش انبار:</h3>
+                <div style="font-size: 2.2em; font-weight:bold; margin: 10px 0;">
+                    <span id="targetCount">0</span> بسته
+                </div>
+                <div style="font-size: 0.8em; color:#ddd;">(ابعاد هر بسته شکلات: ۲ × ۲ × ۲)</div>
+                <button onclick="generateMission()" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.5); color:white; padding:5px 10px; cursor:pointer; margin-top:5px; border-radius:4px;">سفارش جدید 🔄</button>
+            </div>
+
+            <div class="input-group">
+                <label>طول کارتن (L): <span class="value-badge" id="val-L">10</span></label>
+                <input type="range" id="rangeL" min="2" max="16" step="1" value="10" oninput="updateDims()">
+            </div>
+            
+            <div class="input-group">
+                <label>عرض کارتن (W): <span class="value-badge" id="val-W">10</span></label>
+                <input type="range" id="rangeW" min="2" max="16" step="1" value="10" oninput="updateDims()">
+            </div>
+
+            <div class="input-group">
+                <label>ارتفاع کارتن (H): <span class="value-badge" id="val-H">10</span></label>
+                <input type="range" id="rangeH" min="2" max="16" step="1" value="10" oninput="updateDims()">
+            </div>
+
+            <div id="statusMsg" class="status-msg"></div>
+        </div>
+
+        <div class="visual-panel">
+            <canvas id="packCanvas"></canvas>
+            
+            <div class="info-card">
+                <div style="display:flex; justify-content:space-around;">
+                    <div>
+                        <div style="font-size:0.9em; color:#777;">تعداد جا شده</div>
+                        <div class="big-number" id="fitCount">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.9em; color:#777;">فضای پرت (هوا)</div>
+                        <div class="big-number" id="wastedSpace" style="color: #D32F2F;">0%</div>
+                    </div>
+                </div>
+                <div class="efficiency-bar">
+                    <div class="efficiency-fill" id="effBar"></div>
+                </div>
+                <div style="font-size:0.8em; margin-top:5px; color:#555;">بازدهی فضا</div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        // ابعاد ثابت هر بسته شکلات کوچک
+        const ITEM_SIZE = 2; 
+        
+        const canvas = document.getElementById('packCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const state = {
+            box: { L: 10, W: 10, H: 6 }, // ابعاد کارتن بزرگ
+            target: 0,
+            fitted: 0,
+            efficiency: 0
+        };
+
+        // --- تابع جدید برای مدیریت اندازه بوم ---
+        function resizeCanvas() {
+            // عرض المان والد را می‌گیریم
+            const parentWidth = canvas.parentElement.clientWidth;
+            // عرض بوم را برابر والد قرار می‌دهیم (با رعایت حداکثر 500)
+            const newWidth = Math.min(parentWidth, 500);
+            // ارتفاع را متناسب تنظیم می‌کنیم (نسبت 5:4)
+            const newHeight = newWidth * 0.8; 
+            
+            // تنظیم رزولوشن داخلی بوم برای جلوگیری از تاری
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            // اگر بازی شروع شده، دوباره رسم کن
+            if (state.target > 0) draw();
+        }
+
+        // گوش دادن به تغییر سایز صفحه برای تنظیم مجدد بوم
+        window.addEventListener('resize', resizeCanvas);
+
+
+        function startGame() {
+            document.getElementById('introModal').classList.add('hidden');
+            resizeCanvas(); // تنظیم اولیه سایز
+            generateMission();
+        }
+
+        // تولید ماموریت منطقی (عددی که تجزیه‌پذیر باشد)
+        function generateMission() {
+            // لیستی از اعداد خوش‌دست برای تجزیه (تعداد شکلات‌ها)
+            const targets = [8, 12, 16, 18, 20, 24, 27, 30, 32, 36, 40, 48, 50, 60, 64, 72, 80, 100];
+            state.target = targets[Math.floor(Math.random() * targets.length)];
+            
+            // انیمیشن تغییر عدد
+            const targetEl = document.getElementById('targetCount');
+            targetEl.style.transform = "scale(1.5)";
+            setTimeout(() => targetEl.style.transform = "scale(1)", 200);
+            targetEl.innerText = state.target;
+            
+            // ریست کردن اسلایدرها به حالتی که کاربر مجبور به تغییر شود
+            state.box = { L: 6, W: 6, H: 4 };
+            updateUI();
+        }
+
+        function updateDims() {
+            state.box.L = parseInt(document.getElementById('rangeL').value);
+            state.box.W = parseInt(document.getElementById('rangeW').value);
+            state.box.H = parseInt(document.getElementById('rangeH').value);
+            
+            document.getElementById('val-L').innerText = state.box.L;
+            document.getElementById('val-W').innerText = state.box.W;
+            document.getElementById('val-H').innerText = state.box.H;
+
+            calculatePacking();
+            draw();
+            checkSuccess();
+        }
+
+        // به‌روزرسانی UI بدون خواندن از اینپوت‌ها (برای استفاده در دکمه‌ها)
+        function updateUI() {
+            document.getElementById('rangeL').value = state.box.L;
+            document.getElementById('rangeW').value = state.box.W;
+            document.getElementById('rangeH').value = state.box.H;
+            updateDims();
+        }
+
+        // منطق ریاضی بارگیری
+        function calculatePacking() {
+            // محاسبه تعداد جا شده در هر بُعد (Integer Division)
+            const countX = Math.floor(state.box.L / ITEM_SIZE);
+            const countY = Math.floor(state.box.W / ITEM_SIZE);
+            const countZ = Math.floor(state.box.H / ITEM_SIZE);
+
+            state.fitted = countX * countY * countZ;
+
+            // محاسبه حجم‌ها
+            const volBox = state.box.L * state.box.W * state.box.H;
+            const volItems = state.fitted * (ITEM_SIZE * ITEM_SIZE * ITEM_SIZE);
+            
+            // محاسبه درصد فضای پر شده
+            state.efficiency = (volItems / volBox) * 100;
+
+            // نمایش نتایج
+            document.getElementById('fitCount').innerText = state.fitted;
+            
+            const wastedPercent = 100 - state.efficiency;
+            document.getElementById('wastedSpace').innerText = wastedPercent.toFixed(1) + "%";
+            
+            const bar = document.getElementById('effBar');
+            bar.style.width = state.efficiency + "%";
+            
+            // تغییر رنگ نوار وضعیت
+            if(state.efficiency === 100) bar.style.backgroundColor = "#43A047"; // سبز
+            else if(state.efficiency > 80) bar.style.backgroundColor = "#FFB300"; // زرد
+            else bar.style.backgroundColor = "#E53935"; // قرمز
+        }
+
+        function checkSuccess() {
+            const msg = document.getElementById('statusMsg');
+            const diff = state.fitted - state.target;
+
+            if (diff === 0 && state.efficiency === 100) {
+                msg.innerHTML = "✅ عالی! کارتن کاملاً پر شد و تعداد دقیق است.";
+                msg.className = "status-msg win-anim";
+            } else if (diff === 0 && state.efficiency < 100) {
+                msg.innerHTML = "⚠️ تعداد درست است، اما فضای خالی زیاد است! (کارتن را کوچک کن)";
+                msg.className = "status-msg";
+            } else if (diff > 0) {
+                msg.innerHTML = `❌ تعداد ${diff} تا زیاد است!`;
+                msg.className = "status-msg";
+            } else {
+                msg.innerHTML = `📉 تعداد ${Math.abs(diff)} تا کم است!`;
+                msg.className = "status-msg";
+            }
+        }
+
+        // --- بخش رسم (Canvas Logic) ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 60;
+            
+            // مقیاس را بر اساس عرض فعلی بوم تنظیم می‌کنیم
+            // عدد 25 یک عدد تجربی برای تناسب خوب در این سایز بوم است
+            const scale = canvas.width / 25; 
+
+            // تابع کمکی برای تبدیل مختصات سه بعدی به دو بعدی (ایزومتریک)
+            function iso(x, y, z) {
+                return {
+                    x: cx + (x - y) * scale,
+                    y: cy - (x + y) * scale * 0.5 - z * scale
+                };
+            }
+
+            const L = state.box.L;
+            const W = state.box.W;
+            const H = state.box.H;
+
+            // 1. رسم کف کارتن (پشت)
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#ccc";
+            const p0 = iso(0, 0, 0);
+            const p1 = iso(L, 0, 0);
+            const p2 = iso(L, W, 0);
+            const p3 = iso(0, W, 0);
+            
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.closePath();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.fill(); ctx.stroke();
+
+            // 2. محاسبه تعداد جعبه‌ها برای رسم
+            const nx = Math.floor(L / ITEM_SIZE);
+            const ny = Math.floor(W / ITEM_SIZE);
+            const nz = Math.floor(H / ITEM_SIZE);
+
+            // رسم شکلات‌ها (جعبه‌های کوچک)
+            for (let z = 0; z < nz; z++) {
+                for (let y = 0; y < ny; y++) {
+                    for (let x = 0; x < nx; x++) {
+                        drawCube(
+                            x * ITEM_SIZE, 
+                            y * ITEM_SIZE, 
+                            z * ITEM_SIZE, 
+                            ITEM_SIZE, 
+                            scale, 
+                            iso
+                        );
+                    }
+                }
+            }
+
+            // 3. رسم خطوط محیطی کارتن بزرگ (Wireframe) روی همه چیز
+            ctx.lineWidth = 3 * (scale/20); // ضخامت خط هم با مقیاس تغییر کند
+            ctx.strokeStyle = "#8D6E63"; // رنگ کارتن
+            ctx.lineJoin = 'round';
+
+            // کف
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.closePath();
+            ctx.stroke();
+
+            // ستون‌ها
+            const top0 = iso(0, 0, H);
+            const top1 = iso(L, 0, H);
+            const top2 = iso(L, W, H);
+            const top3 = iso(0, W, H);
+
+            ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(top0.x, top0.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(top1.x, top1.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p2.x, p2.y); ctx.lineTo(top2.x, top2.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p3.x, p3.y); ctx.lineTo(top3.x, top3.y); ctx.stroke();
+
+            // سقف
+            ctx.beginPath();
+            ctx.moveTo(top0.x, top0.y); ctx.lineTo(top1.x, top1.y); ctx.lineTo(top2.x, top2.y); ctx.lineTo(top3.x, top3.y); ctx.closePath();
+            ctx.stroke();
+            
+            // نمایش فضای خالی با هاشور قرمز کمرنگ اگر بازدهی ۱۰۰ نیست
+            if (state.efficiency < 100) {
+                ctx.fillStyle = "rgba(255, 0, 0, 0.05)";
+                ctx.beginPath();
+                ctx.moveTo(top0.x, top0.y); ctx.lineTo(top1.x, top1.y); ctx.lineTo(top2.x, top2.y); ctx.lineTo(top3.x, top3.y);
+                ctx.lineTo(p2.x, p2.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p0.x, p0.y); ctx.lineTo(p3.x, p3.y); 
+                ctx.fill();
+            }
+        }
+
+        function drawCube(x, y, z, size, scale, isoFunc) {
+            const gap = 0.1; 
+            const s = size - gap;
+            
+            const p = isoFunc(x, y, z);
+            
+            const p_top_L = isoFunc(x, y, z + s);
+            const p_top_R = isoFunc(x + s, y, z + s);
+            const p_top_B = isoFunc(x + s, y + s, z + s);
+            const p_top_F = isoFunc(x, y + s, z + s);
+            
+            const p_bott_R = isoFunc(x + s, y, z);
+            const p_bott_B = isoFunc(x + s, y + s, z);
+            const p_bott_F = isoFunc(x, y + s, z);
+
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#3E2723";
+
+            // وجه بالا
+            ctx.fillStyle = "#795548";
+            ctx.beginPath();
+            ctx.moveTo(p_top_L.x, p_top_L.y); ctx.lineTo(p_top_R.x, p_top_R.y);
+            ctx.lineTo(p_top_B.x, p_top_B.y); ctx.lineTo(p_top_F.x, p_top_F.y);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // وجه راست
+            ctx.fillStyle = "#5D4037";
+            ctx.beginPath();
+            ctx.moveTo(p_top_R.x, p_top_R.y); ctx.lineTo(p_top_B.x, p_top_B.y);
+            ctx.lineTo(p_bott_B.x, p_bott_B.y); ctx.lineTo(p_bott_R.x, p_bott_R.y);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // وجه جلو
+            ctx.fillStyle = "#4E342E";
+            ctx.beginPath();
+            ctx.moveTo(p_top_F.x, p_top_F.y); ctx.lineTo(p_top_B.x, p_top_B.y);
+            ctx.lineTo(p_bott_B.x, p_bott_B.y); ctx.lineTo(p_bott_F.x, p_bott_F.y);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+
+        // فراخوانی اولیه برای تنظیم سایز (قبل از شروع بازی)
+        resizeCanvas(); 
+        
+    </script>
+</body>
+</html>

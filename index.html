@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کارخانه شکلات‌سازی ChocoMath</title>
+    <style>
+        :root {
+            --brand-dark: #3E2723;
+            --brand-light: #D7CCC8;
+            --gold: #FFC107;
+            --accent: #FF7043;
+            --bg: #F5F5DC;
+            --text-color: #4E342E;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* هدر سایت */
+        header {
+            background: var(--brand-dark);
+            color: white;
+            width: 100%;
+            padding: 25px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: -1px; }
+        .subtitle { 
+            color: var(--gold); 
+            font-size: 0.95rem; 
+            margin-top: 8px; 
+            font-weight: bold;
+            opacity: 0.9; 
+        }
+
+        /* کانتینر کارت‌ها */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            max-width: 1200px;
+            padding: 40px 20px;
+            flex: 1; /* باعث می‌شود فوتر همیشه پایین بماند */
+        }
+
+        /* استایل کارت‌ها */
+        .card {
+            background: white;
+            border-radius: 20px;
+            width: 320px; /* کمی عریض‌تر */
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(62, 39, 35, 0.1);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(62, 39, 35, 0.15);
+            border-color: var(--gold);
+        }
+
+        .card-header {
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            position: relative;
+        }
+        
+        .station-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--brand-dark);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card-content {
+            padding: 25px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h2 { 
+            margin: 0 0 10px 0; 
+            font-size: 1.3rem; 
+            color: var(--brand-dark); 
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+        }
+
+        .card p { 
+            font-size: 0.9rem; 
+            color: #6D4C41; 
+            line-height: 1.6; 
+            flex: 1; 
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: var(--brand-dark);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: background 0.2s, transform 0.2s;
+            display: inline-block;
+        }
+
+        .card:hover .btn { 
+            background: var(--accent); 
+            transform: scale(1.05);
+        }
+
+        /* رنگ‌بندی اختصاصی ایستگاه‌ها */
+        .st1 .card-header { background: #E1BEE7; color: #4A148C; }
+        .st2 .card-header { background: #B2DFDB; color: #004D40; }
+        .st3 .card-header { background: #FFCCBC; color: #BF360C; }
+
+        /* فوتر و امضا */
+        footer {
+            background: #333; /* رنگ تیره برای تمایز */
+            color: #ddd;
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 5px solid var(--gold);
+        }
+
+        .creator-signature {
+            font-weight: bold;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .creator-title {
+            opacity: 0.8;
+            font-size: 0.85rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏭 کارخانه شکلات‌سازی ChocoMath</h1>
+        <div class="subtitle">پروژه تعاملی یادگیری حجم، مساحت و بهینه‌سازی</div>
+    </header>
+
+    <div class="container">
+        
+        <a href="station1.html" class="card st1">
+            <div class="card-header">
+                🏗️
+                <span class="station-badge">ایستگاه ۱</span>
+            </div>
+            <div class="card-content">
+                <h2>طراحی قالب (Volume)</h2>
+                <p>
+                    <strong>ماموریت:</strong> طراحی قالب‌هایی با حجم دقیق.
+                    <br><br>
+                    در این ایستگاه با تغییر ابعاد اشکال هندسی (مکعب، استوانه)، مفهوم <strong>حجم</strong> را به صورت عملی تجربه می‌کنید.
+                </p>
+                <span class="btn">ورود به کارگاه</span>
+            </div>
+        </a>
+
+        <a href="station2.html" class="card st2">
+            <div class="card-header">
+                ✂️
+                <span class="station-badge">ایستگاه ۲</span>
+            </div>
+            <div class="card-content">
+                <h2>بسته‌بندی (Surface Area)</h2>
+                <p>
+                    <strong>ماموریت:</strong> مدیریت هزینه کاغذ بسته‌بندی.
+                    <br><br>
+                    با باز کردن (Gostardeh) اشکال سه بعدی، مفهوم <strong>مساحت کل</strong> را درک کنید و با بودجه محدود بسته‌بندی کنید.
+                </p>
+                <span class="btn">ورود به کارگاه</span>
+            </div>
+        </a>
+
+        <a href="station3.html" class="card st3">
+            <div class="card-header">
+                🚚
+                <span class="station-badge">ایستگاه ۳</span>
+            </div>
+            <div class="card-content">
+                <h2>بارگیری (Optimization)</h2>
+                <p>
+                    <strong>ماموریت:</strong> چیدمان جعبه‌ها بدون فضای پرت.
+                    <br><br>
+                    یک چالش واقعی! ابعاد کارتن مادر را طوری تنظیم کنید که تعداد مشخصی جعبه در آن جا شود (تمرین <strong>تقسیم و بهینه‌سازی</strong>).
+                </p>
+                <span class="btn">ورود به کارگاه</span>
+            </div>
+        </a>
+
+    </div>
+
+    <footer>
+        <span class="creator-signature">اثری از مرتضی پوردولت</span>
+        <span class="creator-title">دبیر ریاضی مدارس سمپاد شهر مشهد</span>
+    </footer>
+
+</body>
+</html>

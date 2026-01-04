@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ایستگاه ۱: کارخانه شکلات‌سازی</title>
+    <style>
+        :root {
+            --chocolate-dark: #3E2723;
+            --chocolate-milk: #795548;
+            --gold: #FFC107;
+            --bg-cream: #F5F5DC;
+            --success: #4CAF50;
+            --overlay-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-cream);
+            color: var(--chocolate-dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--chocolate-dark);
+            border-bottom: 3px solid var(--gold);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        /* --- استایل‌های اصلی برنامه --- */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(62, 39, 35, 0.2);
+            transition: filter 0.3s ease;
+        }
+
+        .controls-panel {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            border-left: 2px dashed var(--chocolate-milk);
+        }
+
+        .visual-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+        
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            float: left;
+            font-weight: bold;
+            color: var(--chocolate-milk);
+            font-family: sans-serif;
+        }
+
+        .stats-box {
+            background: var(--chocolate-dark);
+            color: var(--gold);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            min-width: 250px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: border 0.3s;
+        }
+
+        .formula {
+            font-style: italic;
+            font-family: "Times New Roman", serif;
+            font-size: 1.4em;
+            margin-top: 10px;
+            display: block;
+            opacity: 0.8;
+        }
+
+        .target-box {
+            background: #f0f0f0;
+            border: 2px solid var(--chocolate-milk);
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .target-box h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #555; }
+
+        .status-message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            min-height: 30px;
+        }
+
+        .success-anim {
+            animation: pulse 1s infinite;
+            color: var(--success);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- استایل‌های مودال (پنجره داستان) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--overlay-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 5px solid var(--gold);
+            box-shadow: 0 0 30px rgba(255, 193, 7, 0.4);
+            animation: slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .modal-content h2 { color: var(--chocolate-dark); margin-top: 0; }
+        .modal-content p { font-size: 1.2em; line-height: 1.8; color: #444; margin-bottom: 25px; }
+        
+        .start-btn {
+            background: var(--chocolate-dark);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .start-btn:hover { 
+            background: var(--chocolate-milk); 
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 800px) {
+            .container { flex-direction: column-reverse; }
+            .controls-panel { border-left: none; border-top: 2px dashed var(--chocolate-milk); padding-top: 20px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="introModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>👋 سلام مهندس جدید!</h2>
+            <p>به کارخانه شکلات‌سازی <strong>ChocoMath</strong> خوش آمدی.</p>
+            <p>ما یک چالش داریم: مشتری‌ها دقیقاً همان مقدار شکلاتی را می‌خواهند که سفارش داده‌اند، نه کمتر و نه بیشتر!</p>
+            <p>وظیفه شما این است که ابعاد <strong>قالب شکلات</strong> را طوری تنظیم کنید که حجم آن دقیقاً برابر با «سفارش مشتری» شود.</p>
+            <button class="start-btn" onclick="startGame()">آماده‌ام، شروع کنیم!</button>
+        </div>
+    </div>
+
+    <h1>🏭 ایستگاه ۱: طراحی قالب</h1>
+
+    <div class="container" id="mainContainer">
+        
+        <div class="visual-panel">
+            <canvas id="moldCanvas" width="340" height="340"></canvas>
+            <div class="stats-box">
+                <div>حجم قالب شما:</div>
+                <div style="font-size: 2.5em; font-weight: bold; margin: 10px 0;">
+                    <span id="currentVol">0</span> 
+                    <span style="font-size:0.4em; opacity:0.8;">cm³</span>
+                </div>
+                <span id="formulaDisplay" class="formula">V = ...</span>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="input-group">
+                <label for="shapeSelect">۱. انتخاب نوع قالب:</label>
+                <select id="shapeSelect" onchange="changeShape()">
+                    <option value="cube">مکعب (Cube)</option>
+                    <option value="rectPrism">مکعب مستطیل (Prism)</option>
+                    <option value="cylinder">استوانه (Cylinder)</option>
+                </select>
+            </div>
+
+            <div id="slidersContainer">
+                </div>
+
+            <div class="target-box">
+                <h3>📜 سفارش مشتری (هدف شما):</h3>
+                <div style="font-size: 2em; font-weight: bold; color: var(--chocolate-dark); margin: 10px 0;">
+                    <span id="targetVol">0</span> <span style="font-size:0.5em">cm³</span>
+                </div>
+                <div id="statusMsg" class="status-message">ابعاد را تنظیم کنید...</div>
+                
+                <button onclick="generateNewTarget(true)" 
+                        style="margin-top:20px; padding:8px 20px; cursor:pointer; background: #e0e0e0; border:1px solid #bbb; border-radius:50px; font-size:0.9em; transition:0.2s;">
+                    🔄 دریافت سفارش جدید
+                </button>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        // ==========================================
+        // تنظیمات و وضعیت برنامه
+        // ==========================================
+        const state = {
+            shape: 'cube',
+            dims: { l: 5, w: 5, h: 5, r: 3 }, 
+            target: 0,
+            // محدودیت‌های دقیق اسلایدرها (برای جلوگیری از باگ تولید هدف ناممکن)
+            limits: { 
+                cube: { min: 1, max: 10 },
+                rect: { min: 1, max: 10 },
+                cyl_r: { min: 1, max: 6 },  // نکته مهم: شعاع حداکثر 6 است
+                cyl_h: { min: 1, max: 10 }
+            }
+        };
+
+        const canvas = document.getElementById('moldCanvas');
+        const ctx = canvas.getContext('2d');
+        const PIXEL_SCALE = 15; 
+
+        // ==========================================
+        // توابع شروع و راه‌اندازی
+        // ==========================================
+        
+        // شروع بازی (بستن مودال)
+        function startGame() {
+            const modal = document.getElementById('introModal');
+            const container = document.getElementById('mainContainer');
+            
+            modal.style.opacity = '0'; // انیمیشن فید اوت
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                container.style.filter = "blur(0)"; // حذف تاری
+            }, 300);
+
+            init();
+        }
+
+        // راه‌اندازی اولیه
+        function init() {
+            changeShape(); 
+        }
+
+        // تار کردن صفحه تا قبل از زدن دکمه شروع
+        document.getElementById('mainContainer').style.filter = "blur(8px)";
+
+
+        // ==========================================
+        // توابع منطق ریاضی و هدف‌گذاری
+        // ==========================================
+
+        // تولید عدد تصادفی که دقیقاً با گام‌های اسلایدر (0.5) هماهنگ باشد
+        function getRandomVal(min, max, step = 0.5) {
+            const steps = (max - min) / step;
+            const randomStep = Math.floor(Math.random() * (steps + 1));
+            return min + (randomStep * step);
+        }
+
+        // تولید هدف (سفارش مشتری)
+        function generateNewTarget(resetDims = false) {
+            let targetV = 0;
+
+            if (state.shape === 'cube') {
+                const fakeL = getRandomVal(state.limits.cube.min, state.limits.cube.max);
+                targetV = Math.pow(fakeL, 3);
+            } else if (state.shape === 'rectPrism') {
+                const fakeL = getRandomVal(state.limits.rect.min, state.limits.rect.max);
+                const fakeW = getRandomVal(state.limits.rect.min, state.limits.rect.max);
+                const fakeH = getRandomVal(state.limits.rect.min, state.limits.rect.max);
+                targetV = fakeL * fakeW * fakeH;
+            } else if (state.shape === 'cylinder') {
+                // اینجا از محدودیت‌های خاص استوانه (شعاع تا 6) استفاده می‌کنیم
+                const fakeR = getRandomVal(state.limits.cyl_r.min, state.limits.cyl_r.max);
+                const fakeH = getRandomVal(state.limits.cyl_h.min, state.limits.cyl_h.max);
+                targetV = Math.PI * Math.pow(fakeR, 2) * fakeH;
+            }
+
+            state.target = targetV;
+            
+            // نمایش هدف (اگر اعشاری بود 1 رقم، اگر صحیح بود بدون اعشار)
+            let displayTarget = Number.isInteger(targetV) ? targetV : targetV.toFixed(1);
+            document.getElementById('targetVol').innerText = displayTarget;
+
+            // ریست کردن اسلایدرها به مقادیر کم تا کاربر مجبور به تلاش شود
+            if (resetDims) {
+                state.dims = { l: 2, w: 2, h: 2, r: 2 };
+                updateSlidersUI();
+            }
+
+            checkSuccess();
+        }
+
+        // محاسبه حجم فعلی بر اساس اسلایدرها
+        function calculateVolume() {
+            let v = 0;
+            const { l, w, h, r } = state.dims;
+
+            if (state.shape === 'cube') {
+                v = Math.pow(l, 3);
+            } else if (state.shape === 'rectPrism') {
+                v = l * w * h;
+            } else if (state.shape === 'cylinder') {
+                v = Math.PI * Math.pow(r, 2) * h;
+            }
+
+            // نمایش حجم کاربر
+            let displayV = Number.isInteger(v) ? v : v.toFixed(1);
+            document.getElementById('currentVol').innerText = displayV;
+            
+            return v; // مقدار دقیق را برمی‌گرداند
+        }
+
+        // بررسی اینکه آیا کاربر به هدف رسیده است؟
+        function checkSuccess() {
+            // محاسبه مجدد دقیق
+            let currentV = 0;
+            const { l, w, h, r } = state.dims;
+            if (state.shape === 'cube') currentV = Math.pow(l, 3);
+            else if (state.shape === 'rectPrism') currentV = l * w * h;
+            else if (state.shape === 'cylinder') currentV = Math.PI * Math.pow(r, 2) * h;
+
+            const diff = Math.abs(currentV - state.target);
+            const msg = document.getElementById('statusMsg');
+            const box = document.querySelector('.stats-box');
+            
+            // تلورانس برای استوانه کمی بیشتر است (به خاطر اعشار پی)
+            const tolerance = (state.shape === 'cylinder') ? 0.15 : 0.01;
+
+            if (diff <= tolerance) {
+                msg.innerText = "آفرین! دقیقاً اندازه شد ✅";
+                msg.className = "status-message success-anim";
+                box.style.border = "3px solid #4CAF50";
+                box.style.backgroundColor = "#2E7D32"; // سبز تیره‌تر برای پس‌زمینه
+            } else {
+                // راهنمایی کاربر
+                if (currentV < state.target) msg.innerText = "باید بزرگترش کنی... ⬆️";
+                else msg.innerText = "باید کوچکترش کنی... ⬇️";
+                
+                msg.className = "status-message";
+                box.style.border = "none";
+                box.style.backgroundColor = "var(--chocolate-dark)"; // بازگشت به رنگ اصلی
+            }
+        }
+
+        // ==========================================
+        // توابع رابط کاربری (UI)
+        // ==========================================
+
+        function changeShape() {
+            state.shape = document.getElementById('shapeSelect').value;
+            const container = document.getElementById('slidersContainer');
+            container.innerHTML = '';
+            const formulaDisplay = document.getElementById('formulaDisplay');
+
+            // تنظیم اسلایدرها بر اساس شکل
+            if (state.shape === 'cube') {
+                state.dims.l = 5; 
+                createSlider(container, 'طول ضلع (a)', 'l', state.limits.cube.min, state.limits.cube.max, state.dims.l);
+                formulaDisplay.innerHTML = "V = a³";
+            } else if (state.shape === 'rectPrism') {
+                state.dims.l = 5; state.dims.w = 4; state.dims.h = 3;
+                createSlider(container, 'طول (l)', 'l', state.limits.rect.min, state.limits.rect.max, state.dims.l);
+                createSlider(container, 'عرض (w)', 'w', state.limits.rect.min, state.limits.rect.max, state.dims.w);
+                createSlider(container, 'ارتفاع (h)', 'h', state.limits.rect.min, state.limits.rect.max, state.dims.h);
+                formulaDisplay.innerHTML = "V = l × w × h";
+            } else if (state.shape === 'cylinder') {
+                state.dims.r = 3; state.dims.h = 6;
+                // استفاده از حدود تعریف شده برای استوانه
+                createSlider(container, 'شعاع (r)', 'r', state.limits.cyl_r.min, state.limits.cyl_r.max, state.dims.r);
+                createSlider(container, 'ارتفاع (h)', 'h', state.limits.cyl_h.min, state.limits.cyl_h.max, state.dims.h);
+                formulaDisplay.innerHTML = "V = π × r² × h";
+            }
+            
+            // تولید هدف جدید متناسب با شکل جدید
+            generateNewTarget(false);
+            calculateVolume();
+            draw();
+        }
+
+        function createSlider(parent, labelText, param, min, max, val) {
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.innerHTML = `
+                <label>${labelText} <span class="value-display" id="val-${param}">${val}</span> cm</label>
+                <input type="range" min="${min}" max="${max}" step="0.5" value="${val}" 
+                    oninput="updateDim('${param}', this.value)">
+            `;
+            parent.appendChild(div);
+        }
+
+        function updateDim(param, value) {
+            state.dims[param] = parseFloat(value);
+            document.getElementById(`val-${param}`).innerText = value;
+            calculateVolume();
+            draw();
+            checkSuccess();
+        }
+
+        function updateSlidersUI() {
+            const inputs = document.querySelectorAll('#slidersContainer input');
+            inputs.forEach(input => {
+                const param = input.getAttribute('oninput').match(/'(\w+)'/)[1];
+                if (state.dims[param] !== undefined) {
+                    input.value = state.dims[param];
+                    document.getElementById(`val-${param}`).innerText = state.dims[param];
+                }
+            });
+            calculateVolume();
+            draw();
+        }
+
+        // ==========================================
+        // توابع رسم (Canvas)
+        // ==========================================
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            
+            // مرکز بوم
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 60; // کمی پایین می‌آوریم تا جا برای ارتفاع باشد
+
+            ctx.strokeStyle = '#3E2723';
+            ctx.lineWidth = 2.5;
+            ctx.fillStyle = 'rgba(121, 85, 72, 0.35)'; // رنگ بدنه نیمه شفاف
+
+            const { l, w, h, r } = state.dims;
+            
+            if (state.shape === 'cube' || state.shape === 'rectPrism') {
+                let sl = (state.shape === 'cube' ? l : l) * PIXEL_SCALE;
+                let sw = (state.shape === 'cube' ? l : w) * PIXEL_SCALE;
+                let sh = (state.shape === 'cube' ? l : h) * PIXEL_SCALE;
+
+                // ترسیم نمای ایزومتریک
+                // وجه جلو
+                ctx.beginPath();
+                ctx.moveTo(cx - sl/2, cy);
+                ctx.lineTo(cx + sl/2, cy);
+                ctx.lineTo(cx + sl/2, cy - sh);
+                ctx.lineTo(cx - sl/2, cy - sh);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.fill();
+
+                // وجه بالا (سقف)
+                ctx.beginPath();
+                ctx.moveTo(cx - sl/2, cy - sh);
+                ctx.lineTo(cx + sl/2, cy - sh);
+                ctx.lineTo(cx + sl/2 + sw/2, cy - sh - sw/2);
+                ctx.lineTo(cx - sl/2 + sw/2, cy - sh - sw/2);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.fill();
+
+                // وجه راست (پهلو)
+                ctx.beginPath();
+                ctx.moveTo(cx + sl/2, cy);
+                ctx.lineTo(cx + sl/2 + sw/2, cy - sw/2);
+                ctx.lineTo(cx + sl/2 + sw/2, cy - sh - sw/2);
+                ctx.lineTo(cx + sl/2, cy - sh);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.fill();
+
+            } else if (state.shape === 'cylinder') {
+                let sr = r * PIXEL_SCALE;
+                let sh = h * PIXEL_SCALE;
+
+                // بیضی بالا
+                ctx.beginPath();
+                ctx.ellipse(cx, cy - sh, sr, sr * 0.4, 0, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(121, 85, 72, 0.5)'; // بالای استوانه تیره‌تر
+                ctx.fill();
+
+                // بدنه استوانه (اول پر می‌کنیم تا خط‌چین‌ها پوشیده شوند)
+                ctx.fillStyle = 'rgba(121, 85, 72, 0.35)';
+                ctx.beginPath();
+                ctx.moveTo(cx - sr, cy - sh);
+                ctx.lineTo(cx + sr, cy - sh);
+                ctx.lineTo(cx + sr, cy);
+                // منحنی پایین بدنه
+                ctx.ellipse(cx, cy, sr, sr * 0.4, 0, 0, Math.PI, false); 
+                ctx.lineTo(cx - sr, cy - sh);
+                ctx.fill();
+
+                // خطوط کناری
+                ctx.beginPath();
+                ctx.moveTo(cx - sr, cy - sh);
+                ctx.lineTo(cx - sr, cy);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(cx + sr, cy - sh);
+                ctx.lineTo(cx + sr, cy);
+                ctx.stroke();
+
+                // خط منحنی پایین (جلو)
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, sr, sr * 0.4, 0, 0, Math.PI); 
+                ctx.stroke();
+
+                // خط منحنی پایین (پشت - خط چین)
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.ellipse(cx, cy, sr, sr * 0.4, 0, Math.PI, 2 * Math.PI);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            ctx.restore();
+        }
+    </script>
+</body>
+</html>

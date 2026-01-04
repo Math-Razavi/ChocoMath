@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ایستگاه ۲: اتاق بسته‌بندی</title>
+    <style>
+        :root {
+            --foil-silver: #90A4AE; /* رنگ فویل آلومینیومی */
+            --paper-craft: #D7CCC8; /* رنگ کاغذ کرافت */
+            --gold: #FFC107;
+            --blue-accent: #1976D2;
+            --bg-factory: #ECEFF1;
+            --success: #4CAF50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-factory);
+            color: #37474F;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #263238;
+            border-bottom: 3px solid var(--blue-accent);
+            padding-bottom: 10px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .controls-panel {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            border-left: 2px dashed #B0BEC5;
+        }
+
+        .visual-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #FAFAFA;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input[type="range"] { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+
+        .btn-toggle {
+            background: var(--blue-accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 10px;
+            transition: 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-toggle:hover { transform: scale(1.05); }
+        .btn-toggle.active { background: #E91E63; } /* تغییر رنگ وقتی باز می‌شود */
+
+        .cost-box {
+            background: #263238;
+            color: var(--gold);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .budget-target {
+            background: #FFF8E1;
+            border: 2px solid var(--gold);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .formula-display {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 5px;
+            direction: ltr; /* فرمول‌ها چپ به راست باشند */
+        }
+
+        .status-msg { font-weight: bold; margin-top: 10px; min-height: 25px; }
+        .success-text { color: var(--success); animation: blink 1s infinite; }
+
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* استایل مودال */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 999;
+        }
+        .modal-box {
+            background: white; padding: 30px; border-radius: 15px;
+            text-align: center; max-width: 500px; border-top: 5px solid var(--blue-accent);
+        }
+        .hidden { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="introModal" class="modal">
+        <div class="modal-box">
+            <h2>📦 به ایستگاه بسته‌بندی خوش آمدید!</h2>
+            <p>شکلات‌ها آماده شده‌اند. حالا باید آن‌ها را بسته‌بندی کنیم.</p>
+            <p>کاغذ بسته‌بندی گران است! (قیمت: متری ۱۰ تومان)</p>
+            <p><strong>ماموریت:</strong> ابعاد بسته‌بندی را طوری تنظیم کنید که هزینه نهایی دقیقاً برابر با بودجه‌ای باشد که حسابداری به ما می‌دهد.</p>
+            <button class="btn-toggle" onclick="startGame()">شروع کار</button>
+        </div>
+    </div>
+
+    <h1>✂️ ایستگاه ۲: اتاق بسته‌بندی (محاسبه مساحت)</h1>
+
+    <div class="container" id="mainContainer">
+        
+        <div class="visual-panel">
+            <button class="btn-toggle" id="viewToggle" onclick="toggleView()">📂 باز کردن جعبه (Unfold)</button>
+            <canvas id="paperCanvas" width="350" height="350"></canvas>
+            
+            <div class="cost-box">
+                <div>هزینه کاغذ این بسته:</div>
+                <div style="font-size: 2em; font-weight: bold;">
+                    <span id="currentCost">0</span> تومان
+                </div>
+                <div id="areaDisplay" style="font-size: 0.9em; opacity: 0.8;">مساحت: 0 cm²</div>
+                <div class="formula-display" id="formulaText">S = 6a²</div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="input-group">
+                <label>نوع شکلات:</label>
+                <select id="shapeSelect" onchange="changeShape()">
+                    <option value="cube">مکعب (Cube)</option>
+                    <option value="rectPrism">مکعب مستطیل (Prism)</option>
+                    <option value="cylinder">استوانه (Cylinder)</option>
+                </select>
+            </div>
+
+            <div id="slidersContainer">
+                </div>
+
+            <div class="budget-target">
+                <h3>💰 بودجه مجاز (هدف):</h3>
+                <div style="font-size: 1.8em; font-weight: bold; color: #333;">
+                    <span id="targetCost">0</span> تومان
+                </div>
+                <div id="statusMsg" class="status-msg">تنظیم کنید...</div>
+                <button onclick="generateTarget(true)" style="margin-top:10px; cursor:pointer; padding: 5px 10px;">🔄 سفارش جدید</button>
+            </div>
+            
+            <p style="font-size: 0.8em; color: #777; margin-top: 20px;">
+                * قیمت هر سانتی‌متر مربع کاغذ: <span id="paperPrice">10</span> تومان
+            </p>
+        </div>
+
+    </div>
+    <script>
+        // تنظیمات اصلی
+        const PAPER_PRICE = 10; // قیمت هر واحد مساحت
+        const canvas = document.getElementById('paperCanvas');
+        const ctx = canvas.getContext('2d');
+        const PIXEL_SCALE = 12; // مقیاس رسم
+
+        const state = {
+            shape: 'cube',
+            dims: { l: 4, w: 4, h: 4, r: 3 },
+            isUnfolded: false, // حالت باز یا بسته
+            targetCost: 0,
+            limits: { 
+                cube: { min: 1, max: 8 },
+                rect: { min: 1, max: 8 },
+                cyl_r: { min: 1, max: 5 },
+                cyl_h: { min: 1, max: 8 }
+            }
+        };
+
+        function startGame() {
+            document.getElementById('introModal').classList.add('hidden');
+            init();
+        }
+
+        function init() {
+            changeShape();
+        }
+
+        function toggleView() {
+            state.isUnfolded = !state.isUnfolded;
+            const btn = document.getElementById('viewToggle');
+            if(state.isUnfolded) {
+                btn.innerText = "📦 بستن جعبه (Fold)";
+                btn.classList.add('active');
+            } else {
+                btn.innerText = "📂 باز کردن جعبه (Unfold)";
+                btn.classList.remove('active');
+            }
+            draw();
+        }
+
+        // --- منطق ریاضی ---
+
+        function getRandomVal(min, max) {
+            // اعداد صحیح برای راحتی محاسبه هزینه
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function calculateArea(dims, shape) {
+            let area = 0;
+            if (shape === 'cube') {
+                area = 6 * dims.l * dims.l;
+            } else if (shape === 'rectPrism') {
+                // 2(lw + lh + wh)
+                area = 2 * ( (dims.l * dims.w) + (dims.l * dims.h) + (dims.w * dims.h) );
+            } else if (shape === 'cylinder') {
+                // 2*pi*r*h (جانبی) + 2*pi*r^2 (دو قاعده)
+                area = (2 * Math.PI * dims.r * dims.h) + (2 * Math.PI * Math.pow(dims.r, 2));
+            }
+            return area;
+        }
+
+        function generateTarget(reset = false) {
+            let fakeDims = {};
+            // تولید ابعاد رندوم صحیح برای هدف
+            if (state.shape === 'cube') {
+                const l = getRandomVal(state.limits.cube.min, state.limits.cube.max);
+                fakeDims = { l: l };
+            } else if (state.shape === 'rectPrism') {
+                fakeDims = {
+                    l: getRandomVal(state.limits.rect.min, state.limits.rect.max),
+                    w: getRandomVal(state.limits.rect.min, state.limits.rect.max),
+                    h: getRandomVal(state.limits.rect.min, state.limits.rect.max)
+                };
+            } else if (state.shape === 'cylinder') {
+                fakeDims = {
+                    r: getRandomVal(state.limits.cyl_r.min, state.limits.cyl_r.max),
+                    h: getRandomVal(state.limits.cyl_h.min, state.limits.cyl_h.max)
+                };
+            }
+
+            const area = calculateArea(fakeDims, state.shape);
+            const cost = Math.floor(area * PAPER_PRICE); // رند کردن هزینه نهایی
+            state.targetCost = cost;
+
+            document.getElementById('targetCost').innerText = cost.toLocaleString();
+
+            if(reset) {
+                state.dims = { l: 2, w: 2, h: 2, r: 2 };
+                updateUI();
+            }
+            checkSuccess();
+        }
+
+        function updateUI() {
+            // آپدیت اسلایدرها
+            const inputs = document.querySelectorAll('#slidersContainer input');
+            inputs.forEach(input => {
+                const param = input.getAttribute('data-param');
+                if(state.dims[param]) {
+                    input.value = state.dims[param];
+                    document.getElementById(`val-${param}`).innerText = state.dims[param];
+                }
+            });
+            updateCalculations();
+        }
+
+        function updateCalculations() {
+            const area = calculateArea(state.dims, state.shape);
+            const cost = Math.floor(area * PAPER_PRICE);
+
+            // نمایش
+            document.getElementById('areaDisplay').innerText = `مساحت کل: ${area.toFixed(1)} cm²`;
+            document.getElementById('currentCost').innerText = cost.toLocaleString();
+            
+            checkSuccess(cost);
+            draw();
+        }
+
+        function checkSuccess(currentCost) {
+            const diff = Math.abs(currentCost - state.targetCost);
+            const msg = document.getElementById('statusMsg');
+            const targetBox = document.querySelector('.budget-target');
+
+            // تلورانس هزینه (مثلاً ۵۰ تومان خطا مجاز است به خاطر گرد کردن پی)
+            const tolerance = (state.shape === 'cylinder') ? 50 : 0;
+
+            if (diff <= tolerance) {
+                msg.innerHTML = "✅ عالی! بودجه دقیقاً رعایت شد.";
+                msg.className = "status-msg success-text";
+                targetBox.style.borderColor = "green";
+            } else {
+                if (currentCost > state.targetCost) msg.innerText = "هزینه زیاد شد! کاغذ کمتری مصرف کن 📉";
+                else msg.innerText = "هزینه کم است! بسته باید بزرگتر باشد 📈";
+                msg.className = "status-msg";
+                targetBox.style.borderColor = "var(--gold)";
+            }
+        }
+
+        // --- رابط کاربری ---
+
+        function changeShape() {
+            state.shape = document.getElementById('shapeSelect').value;
+            const container = document.getElementById('slidersContainer');
+            container.innerHTML = '';
+            const formula = document.getElementById('formulaText');
+
+            if (state.shape === 'cube') {
+                createSlider(container, 'طول ضلع (a)', 'l', state.limits.cube.min, state.limits.cube.max);
+                formula.innerHTML = "Cost = (6 × a²) × 10";
+            } else if (state.shape === 'rectPrism') {
+                createSlider(container, 'طول (l)', 'l', state.limits.rect.min, state.limits.rect.max);
+                createSlider(container, 'عرض (w)', 'w', state.limits.rect.min, state.limits.rect.max);
+                createSlider(container, 'ارتفاع (h)', 'h', state.limits.rect.min, state.limits.rect.max);
+                formula.innerHTML = "Cost = 2(lw + lh + wh) × 10";
+            } else if (state.shape === 'cylinder') {
+                createSlider(container, 'شعاع (r)', 'r', state.limits.cyl_r.min, state.limits.cyl_r.max);
+                createSlider(container, 'ارتفاع (h)', 'h', state.limits.cyl_h.min, state.limits.cyl_h.max);
+                formula.innerHTML = "Cost = (2πrh + 2πr²) × 10";
+            }
+            
+            state.isUnfolded = false;
+            document.getElementById('viewToggle').innerText = "📂 باز کردن جعبه (Unfold)";
+            document.getElementById('viewToggle').classList.remove('active');
+
+            generateTarget();
+            updateUI(); // مقداردهی اولیه
+        }
+
+        function createSlider(parent, label, param, min, max) {
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.innerHTML = `
+                <label>${label} <span style="float:left; color:#1976D2" id="val-${param}">${state.dims[param] || min}</span></label>
+                <input type="range" min="${min}" max="${max}" step="1" value="${state.dims[param] || min}" 
+                    data-param="${param}" oninput="onSliderChange('${param}', this.value)">
+            `;
+            parent.appendChild(div);
+        }
+
+        function onSliderChange(param, val) {
+            state.dims[param] = parseFloat(val);
+            document.getElementById(`val-${param}`).innerText = val;
+            updateCalculations();
+        }
+
+        // --- بخش گرافیک و رسم (Canvas) ---
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            if (state.isUnfolded) {
+                drawUnfolded(cx, cy);
+            } else {
+                draw3D(cx, cy);
+            }
+        }
+
+        function draw3D(cx, cy) {
+            ctx.save();
+            ctx.strokeStyle = '#37474F';
+            ctx.lineWidth = 2;
+            ctx.fillStyle = '#CFD8DC'; // رنگ بسته بسته شده
+            
+            const { l, w, h, r } = state.dims;
+            // کمی پایین میاریم که وسط باشه
+            const centerY = cy + 50; 
+
+            if (state.shape === 'cube' || state.shape === 'rectPrism') {
+                let sl = (state.shape === 'cube' ? l : l) * PIXEL_SCALE;
+                let sw = (state.shape === 'cube' ? l : w) * PIXEL_SCALE;
+                let sh = (state.shape === 'cube' ? l : h) * PIXEL_SCALE;
+
+                // رسم مکعب ایزومتریک (مشابه ایستگاه 1)
+                ctx.beginPath();
+                ctx.moveTo(cx - sl/2, centerY);
+                ctx.lineTo(cx + sl/2, centerY);
+                ctx.lineTo(cx + sl/2, centerY - sh);
+                ctx.lineTo(cx - sl/2, centerY - sh);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke(); // جلو
+
+                ctx.beginPath();
+                ctx.moveTo(cx - sl/2, centerY - sh);
+                ctx.lineTo(cx + sl/2, centerY - sh);
+                ctx.lineTo(cx + sl/2 + sw/2, centerY - sh - sw/2);
+                ctx.lineTo(cx - sl/2 + sw/2, centerY - sh - sw/2);
+                ctx.closePath();
+                ctx.fillStyle = '#B0BEC5'; ctx.fill(); ctx.stroke(); // بالا
+
+                ctx.beginPath();
+                ctx.moveTo(cx + sl/2, centerY);
+                ctx.lineTo(cx + sl/2 + sw/2, centerY - sw/2);
+                ctx.lineTo(cx + sl/2 + sw/2, centerY - sh - sw/2);
+                ctx.lineTo(cx + sl/2, centerY - sh);
+                ctx.closePath();
+                ctx.fillStyle = '#90A4AE'; ctx.fill(); ctx.stroke(); // پهلو
+
+            } else if (state.shape === 'cylinder') {
+                let sr = r * PIXEL_SCALE;
+                let sh = h * PIXEL_SCALE;
+                
+                // بالای استوانه
+                ctx.beginPath();
+                ctx.ellipse(cx, centerY - sh, sr, sr * 0.4, 0, 0, 2 * Math.PI);
+                ctx.fillStyle = '#B0BEC5'; ctx.fill(); ctx.stroke();
+
+                // بدنه
+                ctx.beginPath();
+                ctx.moveTo(cx - sr, centerY - sh);
+                ctx.lineTo(cx - sr, centerY); // چپ
+                ctx.ellipse(cx, centerY, sr, sr * 0.4, 0, Math.PI, 0, true); // کمان پایین
+                ctx.lineTo(cx + sr, centerY - sh); // راست
+                ctx.fillStyle = '#CFD8DC'; ctx.fill();
+                
+                // خطوط عمودی بدنه
+                ctx.beginPath(); ctx.moveTo(cx - sr, centerY - sh); ctx.lineTo(cx - sr, centerY); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + sr, centerY - sh); ctx.lineTo(cx + sr, centerY); ctx.stroke();
+                
+                // خط پایین
+                ctx.beginPath();
+                ctx.ellipse(cx, centerY, sr, sr * 0.4, 0, 0, Math.PI);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawUnfolded(cx, cy) {
+            ctx.save();
+            ctx.strokeStyle = '#E91E63'; // رنگ خط برش
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]); // خط چین برای تای کاغذ
+            ctx.fillStyle = '#F8BBD0'; // رنگ کاغذ باز شده
+
+            const { l, w, h, r } = state.dims;
+            
+            if (state.shape === 'cube' || state.shape === 'rectPrism') {
+                // رسم گسترده مکعب (شکل صلیب)
+                let sl = (state.shape === 'cube' ? l : l) * PIXEL_SCALE;
+                let sw = (state.shape === 'cube' ? l : w) * PIXEL_SCALE;
+                let sh = (state.shape === 'cube' ? l : h) * PIXEL_SCALE;
+
+                // مرکز صلیب (کف جعبه)
+                const startX = cx - sl/2;
+                const startY = cy - sw/2;
+
+                // رسم کف
+                ctx.fillRect(startX, startY, sl, sw);
+                ctx.strokeRect(startX, startY, sl, sw);
+
+                // رسم بالا (دورتر)
+                ctx.fillRect(startX, startY - sh, sl, sh); // پشت
+                ctx.strokeRect(startX, startY - sh, sl, sh);
+                
+                ctx.fillRect(startX, startY - sh - sw, sl, sw); // سقف (دورترین)
+                ctx.strokeRect(startX, startY - sh - sw, sl, sw);
+
+                // رسم پایین (جلو)
+                ctx.fillRect(startX, startY + sw, sl, sh);
+                ctx.strokeRect(startX, startY + sw, sl, sh);
+
+                // رسم چپ
+                ctx.fillRect(startX - sh, startY, sh, sw);
+                ctx.strokeRect(startX - sh, startY, sh, sw);
+
+                // رسم راست
+                ctx.fillRect(startX + sl, startY, sh, sw);
+                ctx.strokeRect(startX + sl, startY, sh, sw);
+
+            } else if (state.shape === 'cylinder') {
+                // گسترده استوانه: یک مستطیل بزرگ + دو دایره
+                let sr = r * PIXEL_SCALE;
+                let sh = h * PIXEL_SCALE;
+                let circumference = 2 * Math.PI * sr; // طول مستطیل برابر محیط دایره
+
+                // چون محیط خیلی بزرگ میشه، یه کم اسکیل رو موقت کم می‌کنیم که جا بشه
+                let scaleFactor = 0.6; 
+                sr *= scaleFactor;
+                sh *= scaleFactor;
+                circumference *= scaleFactor;
+
+                // مستطیل بدنه
+                const rectX = cx - circumference / 2;
+                const rectY = cy - sh / 2;
+                
+                ctx.fillRect(rectX, rectY, circumference, sh);
+                ctx.strokeRect(rectX, rectY, circumference, sh);
+
+                // دایره بالا
+                ctx.beginPath();
+                ctx.arc(cx, rectY - sr, sr, 0, 2 * Math.PI);
+                ctx.fill(); ctx.stroke();
+
+                // دایره پایین
+                ctx.beginPath();
+                ctx.arc(cx, rectY + sh + sr, sr, 0, 2 * Math.PI);
+                ctx.fill(); ctx.stroke();
+                
+                // نوشتن ابعاد روی شکل
+                ctx.fillStyle = "black";
+                ctx.font = "12px Arial";
+                ctx.fillText("محیط = 2πr", cx - 20, rectY + sh/2);
+            }
+            ctx.restore();
+        }
+
+        // شروع اولیه
+        updateCalculations();
+        
+    </script>
+</body>
+</html>
